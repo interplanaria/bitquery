@@ -1,0 +1,21 @@
+{
+  "name": "bitquery",
+  "version": "0.3.128",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "bigjq": "0.0.15",
+    "dotenv": "^6.0.0",
+    "mingo": "^2.2.10",
+    "mongodb": "^3.1.4",
+    "traverse": "^0.6.6"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
+}
