@@ -5,7 +5,7 @@ const MongoClient = require('mongodb').MongoClient
 const traverse = require('traverse')
 var collectionNames
 var transform
-const ops = ["db", "find", "aggregate", "sort", "project", "limit", "skip", "distinct"]
+const ops = ["db", "find", "aggregate", "sort", "project", "limit", "skip", "distinct", "count"]
 var sort
 var validate = function(r) {
   if (typeof r.v === 'undefined') {
@@ -21,7 +21,7 @@ var validate = function(r) {
   let errors = []
   for (let i=0; i<keys.length; i++) {
     if (ops.indexOf(keys[i]) < 0) {
-      errors.push("invalid MongoDB op(supported: find, aggregate, sort, project, limit, distinct)")
+      errors.push("invalid MongoDB op(supported: find, aggregate, sort, project, limit, distinct, count)")
       return { status: "invalid", result: false, errors: errors }
     }
   }
@@ -86,7 +86,23 @@ var tryInit = function(config, cb) {
     } else {
       console.log("DB Online!")
       let _db = _client.db(address)
-      cb(_client, _db)
+
+      _db.listCollections().toArray(function(err, infos) {
+        let collectionNames = infos.map(function(info) { return info.name })
+        console.log("Collection Names = ", collectionNames)
+        if (collectionNames && collectionNames.length > 0) {
+          console.log("Collections exist!")
+          cb(_client, _db)
+        } else {
+          console.log("Collections don't exist yet. Retrying after 1 second...")
+          _client.close()
+          setTimeout(function() {
+            tryInit(config, cb)
+          }, 1000)
+        }
+      })
+
+      //cb(_client, _db)
     }
   })
 }
@@ -260,6 +276,15 @@ var lookup = function(address, query, key, resfilter, debug) {
           }
         })
       }
+    } else if (query.count) {
+      let count = collection.find(query.count, { allowDiskUse:true }).count(function (e, count) {
+        if (e) {
+          console.log("Error", e)
+          reject(e)
+        } else {
+          resolve({ name: key, items: count })
+        }
+      });
     } else if (query.distinct) {
       if (query.distinct.field) {
         collection.distinct(query.distinct.field, query.distinct.query, query.distinct.options).then(function(docs) {
