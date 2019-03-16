@@ -7,6 +7,7 @@ var collectionNames
 var transform
 const ops = ["db", "find", "aggregate", "sort", "project", "limit", "skip", "distinct", "count"]
 var sort
+var limit
 var validate = function(r) {
   if (typeof r.v === 'undefined') {
     return { status: "invalid", result: false, errors: ["v missing"] }
@@ -72,6 +73,7 @@ var tryInit = function(config, cb) {
   let url = (config && config.url ? config.url : "mongodb://localhost:27017")
   let address = config.address
   sort = config.sort
+  limit = config.limit
   let sockTimeout = (config && config.timeout) ? config.timeout + 100 : 20100
   console.log("Connecting to DB...")
   MongoClient.connect(url, {
@@ -226,8 +228,15 @@ var lookup = function(address, query, key, resfilter, debug) {
       if (query.skip) {
         cursor = cursor.skip(query.skip)
       }
+
       if (query.limit) {
-        cursor = cursor.limit(query.limit)
+        if (query.limit > limit) {
+          cursor = cursor.limit(limit)
+        } else {
+          cursor = cursor.limit(query.limit)
+        }
+      } else if (limit) {
+        cursor = cursor.limit(limit)
       } else {
         cursor = cursor.limit(100)
       }
