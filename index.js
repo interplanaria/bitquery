@@ -265,16 +265,24 @@ var lookup = function(address, query, key, resfilter, debug) {
             if (resfilter && resfilter.f && res.length > 0) {
               let f = resfilter.f;
               console.log("running jq")
-              jq.run(f, res).then(function(result) {
-                console.log("success jq")
+              try {
+                jq.run(f, res).then(function(result) {
+                  console.log("success jq")
+                  resolve({
+                    name: key,
+                    items: result
+                  })
+                }).catch(function(e) {
+                  console.log("error jq", e)
+                  reject(e)
+                })
+              } catch (e) {
+                console.log("# e = ", e)
                 resolve({
                   name: key,
-                  items: result
+                  items: res
                 })
-              }).catch(function(e) {
-                console.log("error jq", e)
-                reject(e)
-              })
+              }
             } else {
               console.log("no filter. returning immediately")
               resolve({
